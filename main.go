@@ -14,10 +14,10 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/app/", config.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
-	mux.HandleFunc("/healthz", handlerReadiness)
-	mux.HandleFunc("/metrics", config.handlerMetrics)
-	mux.HandleFunc("/reset", config.handlerReset)
+	mux.Handle("/app/", middlewareLog(config.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))))
+	mux.HandleFunc("GET /healthz", handlerReadiness)
+	mux.HandleFunc("GET /metrics", config.handlerMetrics)
+	mux.HandleFunc("GET /reset", config.handlerReset)
 
 	server := &http.Server{
 		Addr: 		":" + port,
