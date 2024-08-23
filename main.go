@@ -1,60 +1,30 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"log"
 )
 
-const port = "8080"
-type apiConfig struct {
-	fileserverHits int
-}
-
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, private")
-		cfg.fileserverHits++
-		fmt.Println("Request received")
-		next.ServeHTTP(w, r)
-	})
-}
-
 func main() {
-	serverMux := http.NewServeMux()
-	config := apiConfig{}
+	const port = "8080"
+	const filepathRoot = "."
 
-	
+	config := apiConfig{
+		fileserverHits: 0,
+	}
 
-	serverMux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-        w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-        w.WriteHeader(http.StatusOK)
-        w.Write([]byte("OK"))
-    })
-
-	serverMux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-        w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-        w.WriteHeader(http.StatusOK)
-        w.Write([]byte(fmt.Sprintf("Hits: %d", config.fileserverHits)))
-    })
-
-	serverMux.HandleFunc("/reset", func(w http.ResponseWriter, r *http.Request) {
-        w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-        w.WriteHeader(http.StatusOK)
-        config.fileserverHits = 0
-    })
-	
-	fileServer := http.FileServer(http.Dir("."))
-	
-	serverMux.Handle("/app/", config.middlewareMetricsInc(http.StripPrefix("/app", fileServer)))
+	mux := http.NewServeMux()
+	mux.Handle("/app/", config.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
+	mux.HandleFunc("/healthz", handlerReadiness)
+	mux.HandleFunc("/metrics", config.handlerMetrics)
+	mux.HandleFunc("/reset", config.handlerReset)
 
 	server := &http.Server{
-		Addr: ":" + port,
-		Handler: serverMux,
+		Addr: 		":" + port,
+		Handler: 	mux,
 	}
 
-	err := server.ListenAndServe()
-	if err != nil {
-		fmt.Println("Error starting server:", err)
-	}
+	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
+	log.Fatal(server.ListenAndServe())
 
 }
