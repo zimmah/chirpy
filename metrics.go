@@ -1,12 +1,15 @@
 package main
 
-import(
-	"fmt"
+import (
+	"html/template"
 	"net/http"
 )
 
 type apiConfig struct {
-	fileserverHits int
+	fileserverHits 	int
+	templatePath 	string
+	port			string
+	filepathRoot 	string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -18,9 +21,18 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Hits %d", cfg.fileserverHits)))
+	tmpl, err := template.ParseFiles(cfg.templatePath)
+	if err != nil {
+		http.Error(w, "Unable to parse template", http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	err = tmpl.Execute(w, map[string]interface{}{
+		"FileserverHits": cfg.fileserverHits,
+	})
+	if err != nil {
+		http.Error(w, "Unable to execute template", http.StatusInternalServerError)
+	}
 }
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
