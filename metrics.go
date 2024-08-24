@@ -7,9 +7,6 @@ import (
 
 type apiConfig struct {
 	fileserverHits 	int
-	templatePath 	string
-	port			string
-	filepathRoot 	string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -21,7 +18,7 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles(cfg.templatePath)
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		http.Error(w, "Unable to parse template", http.StatusInternalServerError)
 	}
