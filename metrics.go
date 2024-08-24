@@ -27,7 +27,7 @@ func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err = tmpl.Execute(w, map[string]interface{}{
+	err = tmpl.Execute(w, map[string]any{
 		"FileserverHits": cfg.fileserverHits,
 	})
 	if err != nil {

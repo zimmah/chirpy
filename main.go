@@ -16,8 +16,11 @@ func main() {
 	mux := http.NewServeMux()
 	appHandler := middlewareLog(config.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(config.filepathRoot)))))
 	mux.Handle("/app/", appHandler)
+	
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /api/reset", config.handlerReset)
+	mux.HandleFunc("POST /api/validate_chirp", handleValidate)
+
 	mux.HandleFunc("GET /admin/metrics", config.handlerMetrics)
 
 	server := &http.Server{
