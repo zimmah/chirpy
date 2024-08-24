@@ -7,14 +7,12 @@ import (
 )
 
 func handleValidate(w http.ResponseWriter, r *http.Request) {
-	const maxChirpLength = 140
-
 	type chirps struct {
 		Body string `json:"body"`
 	}
 
 	type response struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -30,5 +28,7 @@ func handleValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, response{Valid: true})
+	cleanedChirp := wordFilter(chirp.Body)
+
+	respondWithJSON(w, http.StatusOK, response{CleanedBody: cleanedChirp})
 }

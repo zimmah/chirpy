@@ -8,15 +8,12 @@ import (
 func main() {
 	config := apiConfig{
 		fileserverHits: 0,
-		templatePath: 	"./admin/index.html",
-		port:			"8080",
-		filepathRoot:	".",
 	}
 
 	mux := http.NewServeMux()
-	appHandler := middlewareLog(config.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(config.filepathRoot)))))
+	appHandler := middlewareLog(config.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
 	mux.Handle("/app/", appHandler)
-	
+
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /api/reset", config.handlerReset)
 	mux.HandleFunc("POST /api/validate_chirp", handleValidate)
@@ -24,11 +21,11 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", config.handlerMetrics)
 
 	server := &http.Server{
-		Addr: 		":" + config.port,
+		Addr: 		":" + port,
 		Handler: 	mux,
 	}
 
-	log.Printf("Serving files from %s on port: %s\n", config.filepathRoot, config.port)
+	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(server.ListenAndServe())
 
 }
