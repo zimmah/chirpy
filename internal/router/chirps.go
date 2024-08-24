@@ -27,6 +27,7 @@ func handlePostChirps(w http.ResponseWriter, r *http.Request) {
 	responseChirp, err := database.DBPointer.CreateChirp(cleanedChirp)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Database error: %w", err))
+		return
 	}
 
 	respondWithJSON(w, http.StatusCreated, responseChirp)
@@ -36,6 +37,7 @@ func handleGetChirps(w http.ResponseWriter, r *http.Request) {
 	chirps, err := database.DBPointer.GetChirps()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Database error: %w", err))
+		return
 	}
 	respondWithJSON(w, http.StatusOK, chirps)
 }
@@ -44,12 +46,14 @@ func handleGetChirpByID(w http.ResponseWriter, r *http.Request) {
 	chirpID, err := strconv.Atoi(r.PathValue("chirpID"))
 	if err != nil { 
 		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Could not parse request: %w", err))
+		return
 	}
 
-	chirp, err := database.DBPointer.GetChirpByID(chirpID)
+	chirp, statusCode, err := database.DBPointer.GetChirpByID(chirpID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Error loading chirp: %w", err))
+		respondWithError(w, statusCode, fmt.Sprint("Error loading chirp: %w", err))
+		return
 	}
 
-	respondWithJSON(w, http.StatusOK, chirp)
+	respondWithJSON(w, statusCode, chirp)
 }

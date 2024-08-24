@@ -17,9 +17,9 @@ func Router() {
 	// /api
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /api/reset", config.handlerReset)
-	mux.HandleFunc("GET /api/chirps", handleGetChirps)
-	mux.HandleFunc("GET /api/chirps/{chirpID}", handleGetChirpByID)
-	mux.HandleFunc("POST /api/chirps", handlePostChirps)
+	mux.Handle("GET /api/chirps", middlewareLog(http.HandlerFunc(handleGetChirps)))
+	mux.Handle("GET /api/chirps/{chirpID}", middlewareLog(http.HandlerFunc(handleGetChirpByID)))
+	mux.Handle("POST /api/chirps", middlewareLog(http.HandlerFunc(handlePostChirps)))
 
 	// /admin
 	mux.HandleFunc("GET /admin/metrics", config.handlerMetrics)

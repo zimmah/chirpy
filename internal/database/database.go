@@ -2,10 +2,11 @@ package database
 
 import (
 	"encoding/json"
+	"errors"
+	"net/http"
 	"os"
 	"sort"
 	"sync"
-	"errors"
 )
 
 var DBPointer *DB
@@ -29,9 +30,6 @@ func NewDB(path string) (*DB, error) {
 }
 
 func (db *DB) CreateChirp(body string) (Chirp, error) {
-	db.mux.Lock()
-	defer db.mux.Unlock()
-
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return Chirp{}, err
@@ -51,9 +49,6 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 }
 
 func (db *DB) GetChirps() ([]Chirp, error) {
-	db.mux.RLock()
-	defer db.mux.RUnlock()
-
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return nil, err
@@ -71,24 +66,22 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
-func (db *DB) GetChirpByID(id int) (Chirp, error) {
-	db.mux.RLock()
-	defer db.mux.RUnlock()
+func (db *DB) GetChirpByID(id int) (Chirp, int, error) {
 
 	dbStructure, err := db.loadDB()
 	if err != nil {
-		return Chirp{}, err
+		return Chirp{}, http.StatusInternalServerError, err
 	}
 
 	var respChirp Chirp
 	for _, chirp := range dbStructure.Chirps {
 		if chirp.ID == id {
 			respChirp = chirp
-			return respChirp, nil
+			return respChirp, http.StatusOK, nil
 		}
 	}
 
-	return Chirp{}, errors.New("Chirp not found")
+	return Chirp{}, http.StatusNotFound, errors.New("Chirp not found")
 }
 
 func (db *DB) ensureDB() error {
