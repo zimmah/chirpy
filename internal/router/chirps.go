@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/zimmah/chirpy/internal/database"
 )
@@ -25,7 +26,7 @@ func handlePostChirps(w http.ResponseWriter, r *http.Request) {
 	cleanedChirp := wordFilter(chirp.Body)
 	responseChirp, err := database.DBPointer.CreateChirp(cleanedChirp)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Database error")
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Database error: %w", err))
 	}
 
 	respondWithJSON(w, http.StatusCreated, responseChirp)
@@ -34,7 +35,21 @@ func handlePostChirps(w http.ResponseWriter, r *http.Request) {
 func handleGetChirps(w http.ResponseWriter, r *http.Request) {
 	chirps, err := database.DBPointer.GetChirps()
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Database error")
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Database error: %w", err))
 	}
 	respondWithJSON(w, http.StatusOK, chirps)
+}
+
+func handleGetChirpByID(w http.ResponseWriter, r *http.Request) {
+	chirpID, err := strconv.Atoi(r.PathValue("chirpID"))
+	if err != nil { 
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Could not parse request: %w", err))
+	}
+
+	chirp, err := database.DBPointer.GetChirpByID(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Error loading chirp: %w", err))
+	}
+
+	respondWithJSON(w, http.StatusOK, chirp)
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"sort"
 	"sync"
+	"errors"
 )
 
 var DBPointer *DB
@@ -68,6 +69,26 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	})
 
 	return chirps, nil
+}
+
+func (db *DB) GetChirpByID(id int) (Chirp, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return Chirp{}, err
+	}
+
+	var respChirp Chirp
+	for _, chirp := range dbStructure.Chirps {
+		if chirp.ID == id {
+			respChirp = chirp
+			return respChirp, nil
+		}
+	}
+
+	return Chirp{}, errors.New("Chirp not found")
 }
 
 func (db *DB) ensureDB() error {

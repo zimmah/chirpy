@@ -18,6 +18,7 @@ func Router() {
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /api/reset", config.handlerReset)
 	mux.HandleFunc("GET /api/chirps", handleGetChirps)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", handleGetChirpByID)
 	mux.HandleFunc("POST /api/chirps", handlePostChirps)
 
 	// /admin
