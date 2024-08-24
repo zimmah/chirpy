@@ -1,4 +1,4 @@
-package main
+package router
 
 const maxChirpLength = 	140
 const templatePath = 	"./admin/index.html"

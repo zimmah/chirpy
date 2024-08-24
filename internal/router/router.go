@@ -1,11 +1,11 @@
-package main
+package router
 
 import (
-	"net/http"
 	"log"
+	"net/http"
 )
 
-func router() {
+func Router() {
 	config := apiConfig{
 		fileserverHits: 0,
 	}
@@ -14,10 +14,13 @@ func router() {
 	appHandler := middlewareLog(config.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
 	mux.Handle("/app/", appHandler)
 
+	// /api
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /api/reset", config.handlerReset)
-	mux.HandleFunc("POST /api/validate_chirp", handleValidate)
+	mux.HandleFunc("GET /api/chirps", handleGetChirps)
+	mux.HandleFunc("POST /api/chirps", handlePostChirps)
 
+	// /admin
 	mux.HandleFunc("GET /admin/metrics", config.handlerMetrics)
 
 	server := &http.Server{
