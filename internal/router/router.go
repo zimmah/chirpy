@@ -11,7 +11,7 @@ func Router() {
 	}
 
 	mux := http.NewServeMux()
-	appHandler := middlewareLog(config.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
+	appHandler := middlewareLog(config.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(FilepathRoot)))))
 	mux.Handle("/app/", appHandler)
 
 	// /api
@@ -28,6 +28,6 @@ func Router() {
 		Handler: 	mux,
 	}
 
-	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
+	log.Printf("Serving files from %s on port: %s\n", FilepathRoot, port)
 	log.Fatal(server.ListenAndServe())
 }

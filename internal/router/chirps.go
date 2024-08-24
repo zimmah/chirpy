@@ -23,15 +23,18 @@ func handlePostChirps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cleanedChirp := wordFilter(chirp.Body)
+	responseChirp, err := database.DBPointer.CreateChirp(cleanedChirp)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Database error")
+	}
 
-	// increment ID by 1 and save to database (note: start at ID 1)
-	id := 1 // placeholder
-
-	respondWithJSON(w, http.StatusCreated, database.Chirp{Id: id, Body: cleanedChirp})
+	respondWithJSON(w, http.StatusCreated, responseChirp)
 }
 
 func handleGetChirps(w http.ResponseWriter, r *http.Request) {
-	// loop over chirps in DB and return a JSON array of chirps ordered by ID ascending
-	// return status code OK
-	respondWithJSON(w, http.StatusOK, []database.Chirp{})
+	chirps, err := database.DBPointer.GetChirps()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Database error")
+	}
+	respondWithJSON(w, http.StatusOK, chirps)
 }
