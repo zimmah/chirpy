@@ -14,7 +14,7 @@ func handlePostChirps(w http.ResponseWriter, r *http.Request) {
 	chirp := database.Chirp{}
 	err := decoder.Decode(&chirp)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Error decoding chirp: %w", err))
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Error decoding chirp: %v", err))
 		return
 	}
 
@@ -26,7 +26,7 @@ func handlePostChirps(w http.ResponseWriter, r *http.Request) {
 	cleanedChirp := wordFilter(chirp.Body)
 	responseChirp, err := database.DBPointer.CreateChirp(cleanedChirp)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Database error: %w", err))
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Database error: %v", err))
 		return
 	}
 
@@ -36,7 +36,7 @@ func handlePostChirps(w http.ResponseWriter, r *http.Request) {
 func handleGetChirps(w http.ResponseWriter, r *http.Request) {
 	chirps, err := database.DBPointer.GetChirps()
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Database error: %w", err))
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Database error: %v", err))
 		return
 	}
 	respondWithJSON(w, http.StatusOK, chirps)
@@ -45,13 +45,13 @@ func handleGetChirps(w http.ResponseWriter, r *http.Request) {
 func handleGetChirpByID(w http.ResponseWriter, r *http.Request) {
 	chirpID, err := strconv.Atoi(r.PathValue("chirpID"))
 	if err != nil { 
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprint("Could not parse request: %w", err))
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not parse request: %v", err))
 		return
 	}
 
 	chirp, statusCode, err := database.DBPointer.GetChirpByID(chirpID)
 	if err != nil {
-		respondWithError(w, statusCode, fmt.Sprint("Error loading chirp: %w", err))
+		respondWithError(w, statusCode, fmt.Sprintf("Error loading chirp: %v", err))
 		return
 	}
 

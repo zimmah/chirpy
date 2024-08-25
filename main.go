@@ -1,15 +1,18 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"flag"
 
+	"github.com/joho/godotenv"
 	"github.com/zimmah/chirpy/internal/database"
 	"github.com/zimmah/chirpy/internal/router"
 )
 
 func main() {
+	godotenv.Load()
+
 	debug := flag.Bool("debug", false, "Enable debug mode")
 	flag.Parse()
 

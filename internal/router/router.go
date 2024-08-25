@@ -3,11 +3,14 @@ package router
 import (
 	"log"
 	"net/http"
+	"os"
 )
 
 func Router() {
+	jwtSecret := os.Getenv("JWT_SECRET")
 	config := apiConfig{
 		fileserverHits: 0,
+		jwtSecret: []byte(jwtSecret),
 	}
 
 	mux := http.NewServeMux()
@@ -25,6 +28,9 @@ func Router() {
 	mux.Handle("GET /api/users", middlewareLog(http.HandlerFunc(handleGetUsers)))
 	mux.Handle("GET /api/users/{userID}", middlewareLog(http.HandlerFunc(handleGetUserByID)))
 	mux.Handle("POST /api/users", middlewareLog(http.HandlerFunc(handlePostUsers)))
+	mux.Handle("PUT /api/users", middlewareLog(http.HandlerFunc(config.handlePutUsers)))
+	// /api/login
+	mux.Handle("POST /api/login", middlewareLog(http.HandlerFunc(config.handleLogin)))
 
 	// /admin
 	mux.HandleFunc("GET /admin/metrics", config.handlerMetrics)
