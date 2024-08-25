@@ -68,13 +68,12 @@ func (cfg *apiConfig) handlePutUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-	claims, err := cfg.validateJWT(tokenString)
+	userIDString, err := cfg.validateJWT(tokenString)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, fmt.Sprintf("%v", err))
 		return
 	}
 
-	userIDString := claims.Subject
 	userID, err := strconv.Atoi(userIDString)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Invalid token")

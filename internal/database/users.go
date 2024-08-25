@@ -7,70 +7,73 @@ import (
 )
 
 type User struct {
-	ID 					int `json:"id"`
-	Email				string `json:"email"`
-	Password 			string `json:"password"`
-	ExpiresInSeconds 	*int `json:"expires_in_seconds"`
+	ID 				int `json:"id"`
+	Email			string `json:"email"`
+	Password 		string `json:"password"`
+	JWT				string `json:"token"`
+	RefreshToken	string `json:"refresh_token"`
+	// ExpiresInSeconds 	*int `json:"expires_in_seconds"`
 }
 
-type UserResponse struct {
-	ID			int `json:"id"`
-	Email		string `json:"email"`
-}
+// type UserResponse struct {
+// 	ID			int `json:"id"`
+// 	Email		string `json:"email"`
+// }
 
-type UserResponseWithToken struct {
-	ID			int `json:"id"`
-	Email		string `json:"email"`
-	Token		string `json:"token"`
-}
+// type UserResponseWithTokens struct {
+// 	ID			int `json:"id"`
+// 	Email		string `json:"email"`
+// 	JWT		string `json:"token"`
+// 	RefreshToken string `json:"refresh_token`
+// }
 
-func (db *DB) CreateUser(email, password string) (UserResponse, error) {
+func (db *DB) CreateUser(email, password string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
-		return UserResponse{}, err
+		return User{}, err
 	}
 
 	newID := len(dbStructure.Users) + 1
 	user := User{ID: newID, Email: email, Password: password}
-	userResp := UserResponse{ID: newID, Email: email}
+	userResp := User{ID: newID, Email: email}
 
 	dbStructure.Users[newID] = user
 
 	err = db.writeDB(dbStructure)
 	if err != nil {
-		return UserResponse{}, err
+		return User{}, err
 	}
 
 	return userResp, nil
 }
 
-func (db *DB) UpdateUser(id int, email, password string) (UserResponse, error) {
+func (db *DB) UpdateUser(id int, email, password string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
-		return UserResponse{}, err
+		return User{}, err
 	}
 
 	user := User{ID: id, Email: email, Password: password}
-	userResp := UserResponse{ID: id, Email: email}
+	userResp := User{ID: id, Email: email}
 	dbStructure.Users[id] = user
 
 	err = db.writeDB(dbStructure)
 	if err != nil {
-		return UserResponse{}, err
+		return User{}, err
 	}
 
 	return userResp, nil
 }
 
-func (db *DB) GetUsers() ([]UserResponse, error) {
+func (db *DB) GetUsers() ([]User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return nil, err
 	}
 
-	users := make([]UserResponse, 0, len(dbStructure.Users))
+	users := make([]User, 0, len(dbStructure.Users))
 	for _, user := range dbStructure.Users {
-		userResp := UserResponse{ID: user.ID, Email: user.Email}
+		userResp := User{ID: user.ID, Email: user.Email}
 		users = append(users, userResp)
 	}
 
@@ -81,20 +84,20 @@ func (db *DB) GetUsers() ([]UserResponse, error) {
 	return users, nil
 }
 
-func (db *DB) GetUserByID(id int) (UserResponse, int, error) {
+func (db *DB) GetUserByID(id int) (User, int, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
-		return UserResponse{}, http.StatusInternalServerError, err
+		return User{}, http.StatusInternalServerError, err
 	}
 
 	for _, user := range dbStructure.Users {
 		if user.ID == id {
-			respUser := UserResponse{ID: user.ID, Email: user.Email}
+			respUser := User{ID: user.ID, Email: user.Email}
 			return respUser, http.StatusOK, nil
 		}
 	}
 
-	return UserResponse{}, http.StatusNotFound, errors.New("User not found")
+	return User{}, http.StatusNotFound, errors.New("User not found")
 }
 
 func (db *DB) GetUserByEmail(email string) (User, int, error) {

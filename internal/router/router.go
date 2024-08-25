@@ -31,6 +31,10 @@ func Router() {
 	mux.Handle("PUT /api/users", middlewareLog(http.HandlerFunc(config.handlePutUsers)))
 	// /api/login
 	mux.Handle("POST /api/login", middlewareLog(http.HandlerFunc(config.handleLogin)))
+	// /api/refresh
+	mux.Handle("POST /api/refresh", middlewareLog(http.HandlerFunc(config.handleRefresh)))
+	// api/revoke
+	mux.Handle("POST /api/revoke", middlewareLog(http.HandlerFunc(config.handleRevoke)))
 
 	// /admin
 	mux.HandleFunc("GET /admin/metrics", config.handlerMetrics)
