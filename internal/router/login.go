@@ -13,12 +13,12 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Password 			string `json:"password"`
 		Email				string `json:"email"`
-		ExpiresInSeconds	int `json:"expires_in_seconds"`
 	}
 
 	type response struct {
 		User
-		Token string `json:"token"`
+		Token 			string `json:"token"`
+		RefreshToken 	string `json:"refresh_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -41,16 +41,24 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	jwt, err := cfg.generateJWT(user.ID, userReq.ExpiresInSeconds)
+	jwt, err := cfg.generateJWT(user.ID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't generate JWT")
+		return
+	}
+
+	refreshToken, err := cfg.generateRefreshToken(user.ID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't generate refresh token")
 		return
 	}
 
 	resp := response{
 		User: User{ID: user.ID, Email: user.Email},
 		Token: jwt,
+		RefreshToken: refreshToken,
 	}
+
 	w.Header().Add("Authorization", fmt.Sprintf("Bearer %s", jwt))
 	respondWithJSON(w, http.StatusOK, resp)
 }

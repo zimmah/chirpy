@@ -7,11 +7,10 @@ import (
 
 type User struct {
 	ID 				int `json:"id"`
+	ExpiresAt		int	`json:"expires_at"` //refresh token expiry
 	Email			string `json:"email"`
 	HashedPassword	string `json:"hashed_password"`
-	JWT				string `json:"token"`
 	RefreshToken	string `json:"refresh_token"`
-	ExpiresAt		string	`json:"expires_at"` //refresh token expiry
 }
 
 var ErrAlreadyExists = errors.New("already exists")
@@ -46,16 +45,42 @@ func (db *DB) UpdateUser(id int, email, hashedPassword string) (User, error) {
 		return User{}, err
 	}
 
-	user := User{ID: id, Email: email, HashedPassword: hashedPassword}
-	userResp := User{ID: id, Email: email}
+	user, ok := dbStructure.Users[id]
+	if !ok {
+		user = User{ID: id, Email: email, HashedPassword: hashedPassword}
+	} else {
+		user.Email = email
+		user.HashedPassword = hashedPassword
+	}
+	
 	dbStructure.Users[id] = user
-
 	err = db.writeDB(dbStructure)
 	if err != nil {
 		return User{}, err
 	}
-
+	
+	userResp := User{ID: id, Email: email}
 	return userResp, nil
+}
+
+func (db *DB) UpdateUserToken(id, tokenExpiry int, token string) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user := dbStructure.Users[id]
+	updatedUser := User{
+		ID: user.ID,
+		Email: user.Email,
+		HashedPassword: user.HashedPassword,
+		RefreshToken: token,
+		ExpiresAt: tokenExpiry,
+	}
+
+	dbStructure.Users[id] = updatedUser
+
+	return db.writeDB(dbStructure)
 }
 
 func (db *DB) GetUsers() ([]User, error) {
@@ -89,6 +114,17 @@ func (db *DB) GetUserByEmail(email string) (User, error) {
 
 	for _, user := range dbStructure.Users {
 		if user.Email == email { return user, nil }
+	}
+
+	return User{}, ErrNotExist
+}
+
+func (db *DB) GetUserByRefreshToken(refreshToken string) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil { return User{}, err }
+
+	for _, user := range dbStructure.Users {
+		if user.RefreshToken == refreshToken { return user, nil }
 	}
 
 	return User{}, ErrNotExist

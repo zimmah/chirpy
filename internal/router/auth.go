@@ -1,29 +1,23 @@
 package router
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
-	"errors"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/zimmah/chirpy/internal/database"
 )
 
 type JWT struct {
 	Password 			string `json:"password"`
 	Email 				string `json:"email"`
-	ExpiresInSeconds 	int `json:"expires_in_seconds"`
 }
 
-func (cfg *apiConfig) generateJWT(userID, expiresInSeconds int) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour)
-
-	if expiresInSeconds != 0 {
-		customExpiration := time.Duration(expiresInSeconds) * time.Second
-		if customExpiration > 24*time.Hour {
-			customExpiration = 24 * time.Hour
-		}
-		expirationTime = time.Now().Add(customExpiration)
-	}
+func (cfg *apiConfig) generateJWT(userID int) (string, error) {
+	expirationTime := time.Now().Add(maxTokenLifetime)
 
 	claims := jwt.RegisteredClaims{
 		Issuer: "chirpy",
@@ -54,4 +48,24 @@ func (cfg *apiConfig) validateJWT(tokenString string) (string, error) {
 	if issuer != string("chirpy") { return "", errors.New("invalid issuer") }
 
 	return userIDString, nil
+}
+
+func (cfg *apiConfig) generateRefreshToken(userID int) (string, error){
+	randomData := make([]byte, 32)
+	_, err := rand.Read(randomData)
+	if err != nil {return "", err}
+
+	token := hex.EncodeToString(randomData)
+
+	expiresAt := time.Now().Add(maxRefreshTokenLifetime).Unix()
+	err = database.DBPointer.UpdateUserToken(userID, int(expiresAt), token)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+func (cfg *apiConfig) revokeRefreshToken() {
+
 }
