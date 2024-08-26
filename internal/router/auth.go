@@ -65,7 +65,3 @@ func (cfg *apiConfig) generateRefreshToken(userID int) (string, error){
 
 	return token, nil
 }
-
-func (cfg *apiConfig) revokeRefreshToken() {
-
-}
