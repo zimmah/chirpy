@@ -17,11 +17,26 @@ type User struct {
 	Password		string `json:"-"`
 }
 
+func databaseUserToSafeUser(databaseUser database.User) User {
+	user := User{
+		ID: databaseUser.ID,
+		Email: databaseUser.Email,
+	}
+
+	return user
+}
+
 func handleGetUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := database.DBPointer.GetUsers()
+	databaseUsers, err := database.DBPointer.GetUsers()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't get users")
 		return
+	}
+
+	var users []User
+
+	for _, databaseUser := range databaseUsers {
+		users = append(users, databaseUserToSafeUser(databaseUser))
 	}
 	respondWithJSON(w, http.StatusOK, users)
 }
@@ -33,11 +48,13 @@ func handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := database.DBPointer.GetUserByID(userID)
+	databaseUser, err := database.DBPointer.GetUserByID(userID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't get user")
 		return
 	}
+
+	user := databaseUserToSafeUser(databaseUser)
 
 	respondWithJSON(w, http.StatusOK, user)
 }
@@ -62,7 +79,7 @@ func handlePostUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseUser, err := database.DBPointer.CreateUser(user.Email, string(hashedPassword))
+	databaseUser, err := database.DBPointer.CreateUser(user.Email, string(hashedPassword))
 	if err != nil {
 		if errors.Is(err, database.ErrAlreadyExists) {
 			respondWithError(w, http.StatusConflict, "User already exists")
@@ -71,6 +88,8 @@ func handlePostUsers(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create user")
 		return
 	}
+
+	responseUser := databaseUserToSafeUser(databaseUser)
 
 	respondWithJSON(w, http.StatusCreated, responseUser)
 }
@@ -101,8 +120,13 @@ func (cfg *apiConfig) handlePutUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	type parameters struct {
+		Email 		string `json:"email"`
+		Password 	string `json:"password"`
+	}
+
 	decoder := json.NewDecoder(r.Body)
-	userReq := User{}
+	userReq := parameters{}
 	err = decoder.Decode(&userReq)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
@@ -115,11 +139,13 @@ func (cfg *apiConfig) handlePutUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userResp, err := database.DBPointer.UpdateUser(user.ID, userReq.Email, string(hashedPassword))
+	databaseUser, err := database.DBPointer.UpdateUser(user.ID, userReq.Email, string(hashedPassword))
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create user")
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, userResp)
+	responseUser := databaseUserToSafeUser(databaseUser)
+
+	respondWithJSON(w, http.StatusOK, responseUser)
 }
