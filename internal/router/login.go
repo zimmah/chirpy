@@ -54,7 +54,7 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := response{
-		User: User{ID: user.ID, Email: user.Email},
+		User: User{ID: user.ID, Email: user.Email, IsChirpyRed: user.IsChirpyRed},
 		Token: jwt,
 		RefreshToken: refreshToken,
 	}

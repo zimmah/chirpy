@@ -8,9 +8,11 @@ import (
 
 func Router() {
 	jwtSecret := os.Getenv("JWT_SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 	config := apiConfig{
 		fileserverHits: 0,
 		jwtSecret: []byte(jwtSecret),
+		polkaKey: polkaKey,
 	}
 
 	mux := http.NewServeMux()
@@ -23,7 +25,8 @@ func Router() {
 	// /api/chirps
 	mux.Handle("GET /api/chirps", middlewareLog(http.HandlerFunc(handleGetChirps)))
 	mux.Handle("GET /api/chirps/{chirpID}", middlewareLog(http.HandlerFunc(handleGetChirpByID)))
-	mux.Handle("POST /api/chirps", middlewareLog(http.HandlerFunc(handlePostChirps)))
+	mux.Handle("POST /api/chirps", middlewareLog(http.HandlerFunc(config.handlePostChirps)))
+	mux.Handle("DELETE /api/chirps/{chirpID}", middlewareLog(http.HandlerFunc(config.handleDeleteChirp)))
 	// /api/users
 	mux.Handle("GET /api/users", middlewareLog(http.HandlerFunc(handleGetUsers)))
 	mux.Handle("GET /api/users/{userID}", middlewareLog(http.HandlerFunc(handleGetUserByID)))
@@ -35,6 +38,8 @@ func Router() {
 	mux.Handle("POST /api/refresh", middlewareLog(http.HandlerFunc(config.handleRefresh)))
 	// api/revoke
 	mux.Handle("POST /api/revoke", middlewareLog(http.HandlerFunc(config.handleRevoke)))
+	// api/polka/
+	mux.Handle("POST /api/polka/webhooks", middlewareLog(http.HandlerFunc(config.handleWebhook)))
 
 	// /admin
 	mux.HandleFunc("GET /admin/metrics", config.handlerMetrics)

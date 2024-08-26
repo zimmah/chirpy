@@ -6,8 +6,9 @@ import (
 )
 
 type User struct {
+	ExpiresAt		int64	`json:"expires_at"` //refresh token expiry
 	ID 				int `json:"id"`
-	ExpiresAt		int	`json:"expires_at"` //refresh token expiry
+	IsChirpyRed		bool `json:"is_chirpy_red"`
 	Email			string `json:"email"`
 	HashedPassword	string `json:"hashed_password"`
 	RefreshToken	string `json:"refresh_token"`
@@ -26,8 +27,8 @@ func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
 	}
 
 	newID := len(dbStructure.Users) + 1
-	user := User{ID: newID, Email: email, HashedPassword: hashedPassword}
-	userResp := User{ID: newID, Email: email}
+	user := User{ID: newID, Email: email, HashedPassword: hashedPassword, IsChirpyRed: false}
+	userResp := User{ID: newID, Email: email, IsChirpyRed: false}
 
 	dbStructure.Users[newID] = user
 
@@ -47,7 +48,7 @@ func (db *DB) UpdateUser(id int, email, hashedPassword string) (User, error) {
 
 	user, ok := dbStructure.Users[id]
 	if !ok {
-		user = User{ID: id, Email: email, HashedPassword: hashedPassword}
+		user = User{ID: id, Email: email, HashedPassword: hashedPassword, IsChirpyRed: false}
 	} else {
 		user.Email = email
 		user.HashedPassword = hashedPassword
@@ -59,15 +60,13 @@ func (db *DB) UpdateUser(id int, email, hashedPassword string) (User, error) {
 		return User{}, err
 	}
 	
-	userResp := User{ID: id, Email: email}
+	userResp := User{ID: id, Email: email, IsChirpyRed: user.IsChirpyRed}
 	return userResp, nil
 }
 
-func (db *DB) UpdateUserToken(id, tokenExpiry int, token string) error {
+func (db *DB) UpdateUserToken(id int, tokenExpiry int64, token string) error {
 	dbStructure, err := db.loadDB()
-	if err != nil {
-		return err
-	}
+	if err != nil { return err }
 
 	user := dbStructure.Users[id]
 	updatedUser := User{
@@ -76,9 +75,26 @@ func (db *DB) UpdateUserToken(id, tokenExpiry int, token string) error {
 		HashedPassword: user.HashedPassword,
 		RefreshToken: token,
 		ExpiresAt: tokenExpiry,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	dbStructure.Users[id] = updatedUser
+
+	return db.writeDB(dbStructure)
+}
+
+func (db *DB) UpgradeUser(userID int) error {
+	dbStructure, err := db.loadDB()
+	if err != nil { return err }
+	
+	_, err = db.GetUserByID(userID)
+	if err != nil {
+		return err
+	}
+
+	user := dbStructure.Users[userID]
+	user.IsChirpyRed = true
+	dbStructure.Users[userID] = user
 
 	return db.writeDB(dbStructure)
 }
@@ -89,7 +105,7 @@ func (db *DB) GetUsers() ([]User, error) {
 
 	users := make([]User, 0, len(dbStructure.Users))
 	for _, user := range dbStructure.Users {
-		userResp := User{ID: user.ID, Email: user.Email}
+		userResp := User{ID: user.ID, Email: user.Email, IsChirpyRed: user.IsChirpyRed}
 		users = append(users, userResp)
 	}
 

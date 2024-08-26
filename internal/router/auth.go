@@ -58,7 +58,7 @@ func (cfg *apiConfig) generateRefreshToken(userID int) (string, error){
 	token := hex.EncodeToString(randomData)
 
 	expiresAt := time.Now().Add(maxRefreshTokenLifetime).Unix()
-	err = database.DBPointer.UpdateUserToken(userID, int(expiresAt), token)
+	err = database.DBPointer.UpdateUserToken(userID, expiresAt, token)
 	if err != nil {
 		return "", err
 	}

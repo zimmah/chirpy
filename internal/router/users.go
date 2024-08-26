@@ -13,6 +13,7 @@ import (
 
 type User struct {
 	ID 				int `json:"id"`
+	IsChirpyRed		bool`json:"is_chirpy_red"`
 	Email			string `json:"email"`
 	Password		string `json:"-"`
 }
@@ -21,6 +22,7 @@ func databaseUserToSafeUser(databaseUser database.User) User {
 	user := User{
 		ID: databaseUser.ID,
 		Email: databaseUser.Email,
+		IsChirpyRed: databaseUser.IsChirpyRed,
 	}
 
 	return user
