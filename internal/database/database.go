@@ -4,9 +4,21 @@ import (
 	"encoding/json"
 	"os"
 	"sync"
+	"errors"
 )
 
 var DBPointer *DB
+var ErrNotExist = errors.New("resource does not exist")
+
+type DB struct {
+	path 	string
+	mux 	*sync.RWMutex
+}
+
+type DBStructure struct {
+	Chirps 	map[int]Chirp `json:"chirps"`
+	Users 	map[int]User `json:"users"`
+}
 
 func NewDB(path string) (*DB, error) {
 	var mutex sync.RWMutex
@@ -74,14 +86,4 @@ func (db *DB) writeDB(dbStructure DBStructure) error {
 	if err != nil { return err }
 
 	return nil
-}
-
-type DB struct {
-	path 	string
-	mux 	*sync.RWMutex
-}
-
-type DBStructure struct {
-	Chirps 	map[int]Chirp `json:"chirps"`
-	Users 	map[int]User `json:"users"`
 }

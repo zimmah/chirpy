@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/zimmah/chirpy/internal/database"
 )
 
 type JWT struct {
@@ -15,7 +14,7 @@ type JWT struct {
 	ExpiresInSeconds 	int `json:"expires_in_seconds"`
 }
 
-func (cfg *apiConfig) generateJWT(user database.User, expiresInSeconds int) (string, error) {
+func (cfg *apiConfig) generateJWT(userID, expiresInSeconds int) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
 
 	if expiresInSeconds != 0 {
@@ -30,7 +29,7 @@ func (cfg *apiConfig) generateJWT(user database.User, expiresInSeconds int) (str
 		Issuer: "chirpy",
 		IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
 		ExpiresAt: jwt.NewNumericDate(expirationTime.UTC()),
-		Subject: fmt.Sprintf("%d", user.ID),
+		Subject: fmt.Sprintf("%d", userID),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

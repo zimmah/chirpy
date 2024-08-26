@@ -1,8 +1,6 @@
 package database
 
 import(
-	"errors"
-	"net/http"
 	"sort"
 )
 
@@ -48,20 +46,16 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
-func (db *DB) GetChirpByID(id int) (Chirp, int, error) {
-
+func (db *DB) GetChirpByID(id int) (Chirp, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
-		return Chirp{}, http.StatusInternalServerError, err
+		return Chirp{}, err
 	}
 
-	var respChirp Chirp
-	for _, chirp := range dbStructure.Chirps {
-		if chirp.ID == id {
-			respChirp = chirp
-			return respChirp, http.StatusOK, nil
-		}
+	chirp, ok := dbStructure.Chirps[id]
+	if !ok {
+		return Chirp{}, ErrNotExist
 	}
 
-	return Chirp{}, http.StatusNotFound, errors.New("Chirp not found")
+	return chirp, nil
 }

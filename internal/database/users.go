@@ -1,40 +1,33 @@
 package database
 
 import (
-	"sort"
-	"net/http"
 	"errors"
+	"sort"
 )
 
 type User struct {
 	ID 				int `json:"id"`
 	Email			string `json:"email"`
-	Password 		string `json:"password"`
+	HashedPassword	string `json:"hashed_password"`
 	JWT				string `json:"token"`
 	RefreshToken	string `json:"refresh_token"`
-	// ExpiresInSeconds 	*int `json:"expires_in_seconds"`
+	ExpiresAt		string	`json:"expires_at"` //refresh token expiry
 }
 
-// type UserResponse struct {
-// 	ID			int `json:"id"`
-// 	Email		string `json:"email"`
-// }
+var ErrAlreadyExists = errors.New("already exists")
 
-// type UserResponseWithTokens struct {
-// 	ID			int `json:"id"`
-// 	Email		string `json:"email"`
-// 	JWT		string `json:"token"`
-// 	RefreshToken string `json:"refresh_token`
-// }
-
-func (db *DB) CreateUser(email, password string) (User, error) {
+func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
+	if _, err := db.GetUserByEmail(email); !errors.Is(err, ErrNotExist) {
+		return User{}, ErrAlreadyExists
+	}
+	
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
 	}
 
 	newID := len(dbStructure.Users) + 1
-	user := User{ID: newID, Email: email, Password: password}
+	user := User{ID: newID, Email: email, HashedPassword: hashedPassword}
 	userResp := User{ID: newID, Email: email}
 
 	dbStructure.Users[newID] = user
@@ -47,13 +40,13 @@ func (db *DB) CreateUser(email, password string) (User, error) {
 	return userResp, nil
 }
 
-func (db *DB) UpdateUser(id int, email, password string) (User, error) {
+func (db *DB) UpdateUser(id int, email, hashedPassword string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
 	}
 
-	user := User{ID: id, Email: email, Password: password}
+	user := User{ID: id, Email: email, HashedPassword: hashedPassword}
 	userResp := User{ID: id, Email: email}
 	dbStructure.Users[id] = user
 
@@ -67,9 +60,7 @@ func (db *DB) UpdateUser(id int, email, password string) (User, error) {
 
 func (db *DB) GetUsers() ([]User, error) {
 	dbStructure, err := db.loadDB()
-	if err != nil {
-		return nil, err
-	}
+	if err != nil { return nil, err }
 
 	users := make([]User, 0, len(dbStructure.Users))
 	for _, user := range dbStructure.Users {
@@ -77,42 +68,28 @@ func (db *DB) GetUsers() ([]User, error) {
 		users = append(users, userResp)
 	}
 
-	sort.Slice(users, func(i, j int) bool {
-		return users[i].ID < users[j].ID
-	})
+	sort.Slice(users, func(i, j int) bool { return users[i].ID < users[j].ID })
 
 	return users, nil
 }
 
-func (db *DB) GetUserByID(id int) (User, int, error) {
+func (db *DB) GetUserByID(id int) (User, error) {
 	dbStructure, err := db.loadDB()
-	if err != nil {
-		return User{}, http.StatusInternalServerError, err
-	}
+	if err != nil { return User{}, err }
 
-	for _, user := range dbStructure.Users {
-		if user.ID == id {
-			respUser := User{ID: user.ID, Email: user.Email}
-			return respUser, http.StatusOK, nil
-		}
-	}
+	user, ok := dbStructure.Users[id]
+	if !ok { return User{}, ErrNotExist }
 
-	return User{}, http.StatusNotFound, errors.New("User not found")
+	return user, nil
 }
 
-func (db *DB) GetUserByEmail(email string) (User, int, error) {
+func (db *DB) GetUserByEmail(email string) (User, error) {
 	dbStructure, err := db.loadDB()
-	if err != nil {
-		return User{}, http.StatusInternalServerError, err
-	}
+	if err != nil { return User{}, err }
 
-	var respUser User
 	for _, user := range dbStructure.Users {
-		if user.Email == email {
-			respUser = user
-			return respUser, http.StatusOK, nil
-		}
+		if user.Email == email { return user, nil }
 	}
 
-	return User{}, http.StatusUnauthorized, errors.New("Unauthorized: Invalid username/password combination")
+	return User{}, ErrNotExist
 }

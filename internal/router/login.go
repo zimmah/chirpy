@@ -16,33 +16,41 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 		ExpiresInSeconds	int `json:"expires_in_seconds"`
 	}
 
+	type response struct {
+		User
+		Token string `json:"token"`
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	userReq := parameters{}
 	err := decoder.Decode(&userReq)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Can not decode user: %v", err))
+		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
 		return
 	}
 	
-	user, statusCode, err := database.DBPointer.GetUserByEmail(userReq.Email)
-	if err != nil {
-		respondWithError(w, statusCode, fmt.Sprint(err))
-		return
-	}
-	
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userReq.Password))
+	user, err := database.DBPointer.GetUserByEmail(userReq.Email)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Unauthorized: Invalid username/password combination")
 		return
 	}
 	
-	jwt, err := cfg.generateJWT(user, userReq.ExpiresInSeconds)
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(userReq.Password))
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("%v", err))
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized: Invalid username/password combination")
+		return
+	}
+	
+	jwt, err := cfg.generateJWT(user.ID, userReq.ExpiresInSeconds)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't generate JWT")
 		return
 	}
 
-	userResp := database.User{ID: user.ID, Email: user.Email, JWT: jwt}
+	resp := response{
+		User: User{ID: user.ID, Email: user.Email},
+		Token: jwt,
+	}
 	w.Header().Add("Authorization", fmt.Sprintf("Bearer %s", jwt))
-	respondWithJSON(w, http.StatusOK, userResp)
+	respondWithJSON(w, http.StatusOK, resp)
 }
